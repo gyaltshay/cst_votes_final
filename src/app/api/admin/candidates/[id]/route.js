@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logAudit } from '@/lib/audit';
 
 // DELETE /api/admin/candidates/[id]
 export async function DELETE(request, { params }) {
@@ -46,13 +47,11 @@ export async function DELETE(request, { params }) {
     ]);
 
     // Log the action
-    await prisma.auditLog.create({
-      data: {
-        action: 'CANDIDATE_DELETE',
-        entityType: 'CANDIDATE',
-        entityId: id,
-        userId: session.user.id
-      }
+    await logAudit({
+      action: 'CANDIDATE_DELETE',
+      entityType: 'CANDIDATE',
+      entityId: id,
+      userId: session.user.id
     });
 
     return NextResponse.json({ success: true });
