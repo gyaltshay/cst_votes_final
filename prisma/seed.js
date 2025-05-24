@@ -8,17 +8,18 @@ async function main() {
   // Create admin user
   const adminPassword = await hash('Admin@123', 12);
   await prisma.user.upsert({
-    where: { email: 'admin@cst.edu.bt' },
+    where: { email: 'admin@cstvotes.edu.bt' },
     update: {},
     create: {
-      email: 'admin@cst.edu.bt',
+      email: 'admin@cstvotes.edu.bt',
       studentId: '00000000',
       name: 'System Admin',
       password: adminPassword,
       department: DEPARTMENTS.SOFTWARE_ENGINEERING,
       yearOfStudy: 4,
       gender: 'Male',
-      role: 'ADMIN'
+      role: 'ADMIN',
+      emailVerified: new Date()
     }
   });
 
