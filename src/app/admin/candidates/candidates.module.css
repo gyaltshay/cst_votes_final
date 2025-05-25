@@ -238,4 +238,15 @@
   .formTextarea {
     padding: 0.5rem;
   }
+}
+
+.departmentList {
+  margin: 0;
+  padding: 0 1rem 1rem 1rem;
+  list-style: disc inside;
+}
+
+.departmentItem {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
 } 
