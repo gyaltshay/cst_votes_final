@@ -13,11 +13,11 @@ export default function AdminLayout({ children }) {
     if (status === "loading") return;
     
     if (status === "unauthenticated") {
-      window.location.href = "/login";
+      router.push("/login");
     } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
-      window.location.href = "/";
+      router.push("/");
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const handleLogout = async () => {
     const confirmed = window.confirm('Are you sure you want to log out?');

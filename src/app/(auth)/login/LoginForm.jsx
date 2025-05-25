@@ -60,9 +60,9 @@ export default function LoginForm() {
           setError(result.error);
         } else {
           if (isAdmin) {
-            window.location.href = '/admin';
+            router.push('/admin');
           } else {
-            window.location.href = '/';
+            router.push('/');
           }
         }
       } else {
@@ -81,9 +81,9 @@ export default function LoginForm() {
           setError(result.error);
         } else {
           if (isAdmin) {
-            window.location.href = '/admin';
+            router.push('/admin');
           } else {
-            window.location.href = '/';
+            router.push('/');
           }
         }
       }
