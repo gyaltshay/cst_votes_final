@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -31,11 +32,23 @@ export default function AdminDashboard() {
   async function fetchStats() {
     try {
       const res = await fetch("/api/admin/stats");
-      if (!res.ok) throw new Error("Failed to fetch stats");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch stats");
+      }
       const data = await res.json();
       setStats(data);
+      setError("");
+      setRetryCount(0);
     } catch (e) {
       setError(e.message);
+      // Retry up to 3 times with exponential backoff
+      if (retryCount < 3) {
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          fetchStats();
+        }, Math.pow(2, retryCount) * 1000);
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +69,12 @@ export default function AdminDashboard() {
   return (
     <div className={dashStyles.dashboardContainer}>
       <h1 className={dashStyles.dashboardHeader}>Admin Dashboard</h1>
-      {error && <div className={dashStyles.errorMessage}>{error}</div>}
+      {error && (
+        <div className={dashStyles.errorMessage}>
+          {error}
+          {retryCount < 3 && <span> Retrying...</span>}
+        </div>
+      )}
       <div className={dashStyles.statsGrid}>
         <div className={dashStyles.statCard}>
           <div className={dashStyles.statTitle}>Total Users</div>

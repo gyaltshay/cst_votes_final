@@ -10,7 +10,11 @@ export async function middleware(request) {
       return NextResponse.next();
     }
 
-    const token = await getToken({ req: request });
+    const token = await getToken({ 
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET 
+    });
+    
     const isAuthenticated = !!token;
     const isAdmin = token?.role === 'ADMIN';
 
@@ -30,7 +34,6 @@ export async function middleware(request) {
       '/forgot-password',
       '/reset-password',
       '/help',
-      '/admin/login',
       '/api/auth',
       '/verify-2fa',
       '/verify-email'
@@ -52,24 +55,20 @@ export async function middleware(request) {
       if (isAuthenticated && (path === '/login' || path === '/register')) {
         return NextResponse.redirect(new URL('/', request.url));
       }
-      // If admin is already authenticated and tries to access admin login
-      if (isAuthenticated && isAdmin && path === '/admin/login') {
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      }
       return NextResponse.next();
     }
 
     // Check authentication for protected routes
     if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', request.url);
+      loginUrl.searchParams.set('callbackUrl', encodeURIComponent(request.url));
       return NextResponse.redirect(loginUrl);
     }
 
     // Check admin access for admin routes
     if (adminPaths.some(p => path.startsWith(p))) {
       if (!isAdmin) {
-        return NextResponse.redirect(new URL('/admin/login', request.url));
+        return NextResponse.redirect(new URL('/', request.url));
       }
     }
 
@@ -91,8 +90,8 @@ export async function middleware(request) {
     return NextResponse.next();
   } catch (error) {
     console.error('Middleware error:', error);
-    // In case of error, allow the request to proceed
-    return NextResponse.next();
+    // In case of error, redirect to login
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 }
 

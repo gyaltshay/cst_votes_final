@@ -9,34 +9,31 @@ export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Debug log (remove in production if you want)
   useEffect(() => {
-    console.log("Session:", session, "Status:", status);
-  }, [session, status]);
-
-  useEffect(() => {
-    if (status === "loading") return; // Don't redirect while loading
+    if (status === "loading") return;
+    
     if (status === "unauthenticated") {
-      router.replace("/login");
+      window.location.href = "/login";
     } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
-      router.replace("/");
+      window.location.href = "/";
     }
-  }, [status, session, router]);
+  }, [status, session]);
 
   const handleLogout = async () => {
     const confirmed = window.confirm('Are you sure you want to log out?');
     if (confirmed) {
-      await signOut({ callbackUrl: '/login' });
+      await signOut({ 
+        callbackUrl: '/login',
+        redirect: true 
+      });
     }
   };
 
-  // Show loader while loading or session is not available
-  if (status === "loading" || !session) {
+  if (status === "loading") {
     return <div className={styles.loadingScreen}>Loading...</div>;
   }
 
-  // If authenticated but not admin, don't render children (redirect will happen)
-  if (session?.user?.role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return <div className={styles.loadingScreen}>Redirecting...</div>;
   }
 

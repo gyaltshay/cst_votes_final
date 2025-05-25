@@ -62,7 +62,7 @@ export default function LoginForm() {
           if (isAdmin) {
             window.location.href = '/admin';
           } else {
-            router.push('/');
+            window.location.href = '/';
           }
         }
       } else {
@@ -83,7 +83,7 @@ export default function LoginForm() {
           if (isAdmin) {
             window.location.href = '/admin';
           } else {
-            router.push('/');
+            window.location.href = '/';
           }
         }
       }

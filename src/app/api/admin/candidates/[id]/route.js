@@ -57,7 +57,7 @@ export async function DELETE(request, { params }) {
     } catch (logError) {
       console.error('Audit log failed:', logError);
       // Do not throw, just log the error
-    }
+      }
 
     return NextResponse.json({ success: true });
   } catch (error) {
