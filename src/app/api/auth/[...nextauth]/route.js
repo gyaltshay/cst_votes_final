@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { prisma, connectDB, disconnectDB, checkDBConnection } from '@/lib/prisma';
 import { sendVerificationEmail } from '@/lib/email';
 import { generateTwoFactorCode } from '@/lib/2fa';
 
@@ -22,76 +22,43 @@ export const authOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        identifier: { label: "Student ID or Email", type: "text" },
-        password: { label: "Password", type: "password" },
-        isAdmin: { label: "Is Admin", type: "boolean" },
-        verificationCode: { label: "Verification Code", type: "text" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.identifier || !credentials?.password) {
-          throw new Error('Please enter your credentials');
-        }
-
-        const isAdminLogin = credentials.isAdmin === 'true';
-        const user = await prisma.user.findFirst({
-          where: isAdminLogin
-            ? { email: credentials.identifier, role: 'ADMIN' }
-            : { studentId: credentials.identifier }
-        });
-
-        if (!user) {
-          throw new Error(isAdminLogin 
-            ? 'Invalid admin credentials' 
-            : 'No user found with this student ID'
-          );
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) {
-          throw new Error('Invalid password');
-        }
-
-        // If verification code is provided, verify it
-        if (credentials.verificationCode) {
-          const verificationCode = await prisma.twoFactorCode.findFirst({
-            where: {
-              userId: user.id,
-              code: credentials.verificationCode,
-              expiresAt: { gt: new Date() }
-            }
+        try {
+          // Ensure database connection
+          await connectDB();
+          
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
           });
 
-          if (!verificationCode) {
-            throw new Error('Invalid or expired verification code');
+          if (!user) {
+            throw new Error("No user found with this email");
           }
 
-          // Delete the used code
-          await prisma.twoFactorCode.delete({
-            where: { id: verificationCode.id }
-          });
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
 
-          // Update user's email verification status
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { emailVerified: new Date() }
-          });
-        } else if (!isAdminLogin) {
-          // Generate and send 2FA code if not admin and no verification code provided
-          const code = await generateTwoFactorCode(user.id);
-          await sendVerificationEmail(user.email, code);
-          throw new Error('VERIFICATION_REQUIRED');
+          if (!isPasswordValid) {
+            throw new Error("Invalid password");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Authentication error:", error);
+          throw error;
+        } finally {
+          // Don't disconnect here as it might affect other operations
         }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          studentId: user.studentId,
-          department: user.department,
-          gender: user.gender,
-        };
       }
     })
   ],
@@ -132,23 +99,17 @@ export const authOptions = {
       }
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
         token.role = user.role;
-        token.studentId = user.studentId;
-        token.department = user.department;
-        token.gender = user.gender;
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id;
         session.user.role = token.role;
-        session.user.studentId = token.studentId;
-        session.user.department = token.department;
-        session.user.gender = token.gender;
+        session.user.id = token.id;
       }
       return session;
     }
@@ -161,4 +122,17 @@ export const authOptions = {
 };
 
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+
+// Add health check endpoint
+export async function GET(req) {
+  if (req.nextUrl.pathname === '/api/auth/health') {
+    const isHealthy = await checkDBConnection();
+    return new Response(JSON.stringify({ status: isHealthy ? 'healthy' : 'unhealthy' }), {
+      status: isHealthy ? 200 : 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return handler(req);
+}
+
+export { handler as POST };
