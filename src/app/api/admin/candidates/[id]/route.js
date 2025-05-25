@@ -46,19 +46,24 @@ export async function DELETE(request, { params }) {
       })
     ]);
 
-    // Log the action
-    await logAudit({
-      action: 'CANDIDATE_DELETE',
-      entityType: 'CANDIDATE',
-      entityId: id,
-      userId: session.user.id
-    });
+    // Log the action (non-fatal)
+    try {
+      await logAudit({
+        action: 'CANDIDATE_DELETE',
+        entityType: 'CANDIDATE',
+        entityId: id,
+        userId: session.user.id
+      });
+    } catch (logError) {
+      console.error('Audit log failed:', logError);
+      // Do not throw, just log the error
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete candidate:', error);
+    console.error('Failed to delete candidate:', error, error.stack);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error', details: error.stack },
       { status: 500 }
     );
   }
