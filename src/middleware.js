@@ -42,11 +42,12 @@ export async function middleware(request) {
     // Admin-only paths
     const adminPaths = [
       '/admin',
-      '/admin/dashboard',
+      '/admin/settings',
+      '/admin/users',
       '/admin/candidates',
       '/admin/positions',
-      '/admin/settings',
-      '/admin/users'
+      '/admin/election-status',
+      '/admin/support-messages'
     ];
 
     // Allow public paths
@@ -66,9 +67,13 @@ export async function middleware(request) {
     }
 
     // Check admin access for admin routes
-    if (adminPaths.some(p => path.startsWith(p))) {
+    if (path.startsWith('/admin')) {
       if (!isAdmin) {
         return NextResponse.redirect(new URL('/', request.url));
+      }
+      // Ensure admin users can only access valid admin paths
+      if (!adminPaths.some(p => path.startsWith(p))) {
+        return NextResponse.redirect(new URL('/admin', request.url));
       }
     }
 
