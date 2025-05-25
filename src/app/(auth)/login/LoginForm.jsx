@@ -60,7 +60,7 @@ export default function LoginForm() {
           setError(result.error);
         } else {
           if (isAdmin) {
-            window.location.href = '/admin/dashboard';
+            window.location.href = '/admin';
           } else {
             router.push('/');
           }
@@ -81,7 +81,7 @@ export default function LoginForm() {
           setError(result.error);
         } else {
           if (isAdmin) {
-            window.location.href = '/admin/dashboard';
+            window.location.href = '/admin';
           } else {
             router.push('/');
           }
