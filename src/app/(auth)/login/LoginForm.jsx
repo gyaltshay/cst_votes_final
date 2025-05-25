@@ -59,7 +59,7 @@ export default function LoginForm() {
         if (result.error) {
           setError(result.error);
         } else {
-          router.push(isAdmin ? '/admin' : '/');
+          router.push(isAdmin ? '/admin/dashboard' : '/');
         }
       } else {
         // Initial login attempt
@@ -76,7 +76,7 @@ export default function LoginForm() {
         } else if (result.error) {
           setError(result.error);
         } else {
-          router.push(isAdmin ? '/admin' : '/');
+          router.push(isAdmin ? '/admin/dashboard' : '/');
         }
       }
     } catch (error) {
