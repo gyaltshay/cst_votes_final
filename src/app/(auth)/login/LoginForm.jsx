@@ -60,9 +60,9 @@ export default function LoginForm() {
           setError(result.error);
         } else {
           if (isAdmin) {
-            router.replace('/admin');
+            router.push('/admin');
           } else {
-            router.replace('/');
+            router.push('/');
           }
         }
       } else {
@@ -81,9 +81,9 @@ export default function LoginForm() {
           setError(result.error);
         } else {
           if (isAdmin) {
-            router.replace('/admin');
+            router.push('/admin');
           } else {
-            router.replace('/');
+            router.push('/');
           }
         }
       }

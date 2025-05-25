@@ -54,7 +54,7 @@ export async function middleware(request) {
     if (publicPaths.some(p => path.startsWith(p))) {
       // If user is already authenticated and tries to access login/register
       if (isAuthenticated && (path === '/login' || path === '/register')) {
-        return NextResponse.redirect(new URL('/', request.url));
+        return NextResponse.redirect(new URL('/', request.url), { status: 307 });
       }
       return NextResponse.next();
     }
@@ -63,17 +63,17 @@ export async function middleware(request) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', encodeURIComponent(request.url));
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(loginUrl, { status: 307 });
     }
 
     // Check admin access for admin routes
     if (path.startsWith('/admin')) {
       if (!isAdmin) {
-        return NextResponse.redirect(new URL('/', request.url));
+        return NextResponse.redirect(new URL('/', request.url), { status: 307 });
       }
       // Ensure admin users can only access valid admin paths
       if (!adminPaths.some(p => path.startsWith(p))) {
-        return NextResponse.redirect(new URL('/admin', request.url));
+        return NextResponse.redirect(new URL('/admin', request.url), { status: 307 });
       }
     }
 
@@ -96,7 +96,7 @@ export async function middleware(request) {
   } catch (error) {
     console.error('Middleware error:', error);
     // In case of error, redirect to login
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/login', request.url), { status: 307 });
   }
 }
 

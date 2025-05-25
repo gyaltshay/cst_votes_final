@@ -18,9 +18,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace("/login");
+      router.push("/login");
     } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
-      router.replace("/");
+      router.push("/");
     }
   }, [status, session, router]);
 
