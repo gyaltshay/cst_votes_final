@@ -19,35 +19,50 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login");
+    } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
+      router.replace("/dashboard");
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   useEffect(() => {
-    fetchStats();
-    // Set up polling every 30 seconds
-    const interval = setInterval(fetchStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (status === "authenticated" && session?.user?.role === "ADMIN") {
+      fetchStats();
+      // Set up polling every 30 seconds
+      const interval = setInterval(fetchStats, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [status, session]);
 
   async function fetchStats() {
     try {
-      const res = await fetch("/api/admin/stats");
+      setLoading(true);
+      const res = await fetch("/api/admin/stats", {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to fetch stats");
       }
+      
       const data = await res.json();
       setStats(data);
       setError("");
       setRetryCount(0);
     } catch (e) {
+      console.error("Error fetching stats:", e);
       setError(e.message);
       // Retry up to 3 times with exponential backoff
       if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`Retrying in ${delay}ms...`);
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
           fetchStats();
-        }, Math.pow(2, retryCount) * 1000);
+        }, delay);
       }
     } finally {
       setLoading(false);
@@ -64,6 +79,10 @@ export default function AdminDashboard() {
 
   if (status === "loading" || loading) {
     return <div className={dashStyles.dashboardContainer}>Loading...</div>;
+  }
+
+  if (status === "authenticated" && session?.user?.role !== "ADMIN") {
+    return <div className={dashStyles.dashboardContainer}>Access Denied</div>;
   }
 
   return (
